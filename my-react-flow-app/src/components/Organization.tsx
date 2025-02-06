@@ -1,5 +1,3 @@
-// Organization.tsx
-
 import React from "react";
 import { Organization as Org } from "./Logic";
 

@@ -49,7 +49,7 @@ const Chat: React.FC<ChatProps> = ({ onSend, chatHistory }) => {
           onClick={handleSend}
           className="bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600 transition"
         >
-          Отправить
+          Sensd
         </button>
       </div>
     </div>
