@@ -1,0 +1,26 @@
+{
+  "content": [
+    {
+      "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "name": "Parent Organization",
+      "children": [
+        {
+          "id": "child-1",
+          "name": "Child Organization 1"
+        },
+        {
+          "id": "child-2",
+          "name": "Child Organization 2"
+        },
+        {
+          "id": "child-3",
+          "name": "Child Organization 3"
+        }
+      ]
+    }
+  ],
+  "page": 0,
+  "totalElements": 1,
+  "totalPages": 1,
+  "size": 1
+}
