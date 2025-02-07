@@ -1,4 +1,15 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import ReactFlow, {
+  addEdge,
+  useEdgesState,
+  useNodesState,
+  Controls,
+  Background,
+  Connection,
+  Edge,
+} from "reactflow";
+import "reactflow/dist/style.css";
+
 import {
   getOrganizations,
   getChatAnswer,
@@ -7,83 +18,169 @@ import {
   ChatResponse,
 } from "./Logic";
 
-import Organization from "./Organization";
 import Chat from "./Chat";
-
+import Organization from "./Organization";
 interface ChatMessage {
   question: string;
   answer: string;
 }
+const nodeTypes = {
+  chatNode: Chat,
+  orgNode: Organization,
+};
 
-const Section: React.FC = () => {
-  const [organizations, setOrganizations] = useState<Org[]>([]);
-  const [selectedOrgIds, setSelectedOrgIds] = useState<string[]>([]);
+function Section() {
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
-
-  useEffect(() => {
-    async function fetchData() {
-      const response: OrganizationsResponse = await getOrganizations();
-      if (response && response.content) {
-        const allOrgs: Org[] = [];
-
-        response.content.forEach((parentOrg: Org) => {
-          allOrgs.push({
-            id: parentOrg.id,
-            name: parentOrg.name,
-          });
-          if (parentOrg.children && parentOrg.children.length) {
-            parentOrg.children.forEach((child: Org) => {
-              allOrgs.push(child);
-            });
-          }
-        });
-
-        setOrganizations(allOrgs);
-      }
-    }
-    fetchData();
-  }, []);
-
+  const [selectedOrgIds, setSelectedOrgIds] = useState<string[]>([]);
   const handleSelectOrg = (orgId: string) => {
     setSelectedOrgIds((prev) => {
-      if (!prev.includes(orgId)) {
-        return [...prev, orgId];
-      } else {
+      if (prev.includes(orgId)) {
         return prev.filter((id) => id !== orgId);
       }
+      return [...prev, orgId];
     });
   };
 
-  const handleSendChat = async (promptText: string) => {
-    const chatResponse: ChatResponse = await getChatAnswer(
-      selectedOrgIds,
-      promptText
+  const handleSendChat = useCallback(
+    async (prompt: string) => {
+      const chatResponse: ChatResponse = await getChatAnswer(
+        selectedOrgIds,
+        prompt
+      );
+      setChatHistory((prev) => [
+        ...prev,
+        { question: chatResponse.question, answer: chatResponse.answer },
+      ]);
+    },
+    [selectedOrgIds]
+  );
+
+  useEffect(() => {
+    async function loadData() {
+      const orgResponse: OrganizationsResponse = await getOrganizations();
+      if (!orgResponse?.content?.length) return;
+
+      const chatNode = {
+        id: "chat-node",
+        type: "chatNode",
+        position: { x: 20, y: 180 },
+        data: {
+          question: "",
+          chatHistory,
+          onSend: handleSendChat,
+        },
+      };
+
+      const parent = orgResponse.content[0];
+      const parentNode = {
+        id: parent.id,
+        type: "orgNode",
+        position: { x: 500, y: 320 },
+        data: {
+          orgData: parent,
+          onSelect: handleSelectOrg,
+          isSelected: selectedOrgIds.includes(parent.id),
+        },
+      };
+
+      const childNodes = (parent.children || []).map((child: Org, index) => {
+        return {
+          id: child.id,
+          type: "orgNode",
+          position: { x: 900, y: 200 + index * 130 },
+          data: {
+            orgData: child,
+            onSelect: handleSelectOrg,
+            isSelected: selectedOrgIds.includes(child.id),
+          },
+        };
+      });
+
+      const edgeChatToParent = {
+        id: "edge-chat-parent",
+        source: "chat-node",
+        target: parent.id,
+      };
+
+      const edgesParentToChildren = (parent.children || []).map(
+        (child: Org) => {
+          return {
+            id: `edge-${parent.id}-${child.id}`,
+            source: parent.id,
+            target: child.id,
+          };
+        }
+      );
+
+      const allNodes = [chatNode, parentNode, ...childNodes];
+      const allEdges = [edgeChatToParent, ...edgesParentToChildren];
+
+      setNodes(allNodes);
+      setEdges(allEdges);
+    }
+
+    loadData();
+  }, [chatHistory, handleSendChat, selectedOrgIds, setEdges, setNodes]);
+
+  useEffect(() => {
+    setNodes((prev) =>
+      prev.map((node) => {
+        if (node.id === "chat-node") {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              chatHistory: chatHistory,
+            },
+          };
+        }
+        return node;
+      })
     );
-    setChatHistory((prev) => [
-      ...prev,
-      {
-        question: chatResponse.question,
-        answer: chatResponse.answer,
-      },
-    ]);
-  };
+  }, [chatHistory, setNodes]);
+
+  useEffect(() => {
+    setNodes((prevNodes) =>
+      prevNodes.map((node) => {
+        if (node.type === "orgNode") {
+          const orgId = node.data.orgData.id;
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              isSelected: selectedOrgIds.includes(orgId),
+              selectedOrgIds,
+            },
+          };
+        }
+        return node;
+      })
+    );
+  }, [selectedOrgIds, setNodes]);
+
+  const onConnect = useCallback(
+    (params: Edge | Connection) => setEdges((eds) => addEdge(params, eds)),
+    [setEdges]
+  );
 
   return (
-    <div className="flex gap-4 p-4">
-      <div className="w-72">
-        <h2 className="font-bold text-xl mb-2">List of Organizations</h2>
-        {organizations.map((org) => (
-          <Organization key={org.id} orgData={org} onSelect={handleSelectOrg} />
-        ))}
-
-        <p className="mt-2">
-          <strong>Selected organizations:</strong> {selectedOrgIds.join(", ")}
-        </p>
-      </div>
-
-      <Chat onSend={handleSendChat} chatHistory={chatHistory} />
+    <div style={{ width: "80vw", height: "100vh" }}>
+      <ReactFlow
+        nodeTypes={nodeTypes}
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        fitView
+      >
+        <Controls />
+        <Background />
+      </ReactFlow>
     </div>
   );
-};
+}
 
 export default Section;

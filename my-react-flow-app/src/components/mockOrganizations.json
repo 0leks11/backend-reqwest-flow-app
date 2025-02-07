@@ -15,6 +15,14 @@
         {
           "id": "child-3",
           "name": "Child Organization 3"
+        },
+        {
+          "id": "child-4",
+          "name": "Child Organization 4"
+        },
+        {
+          "id": "child-5",
+          "name": "Child Organization 5"
         }
       ]
     }

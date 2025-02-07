@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { Handle, Position } from "reactflow";
+import "reactflow/dist/style.css";
 
 interface ChatMessage {
   question: string;
@@ -6,26 +8,34 @@ interface ChatMessage {
 }
 
 interface ChatProps {
-  onSend: (prompt: string) => void;
-  chatHistory: ChatMessage[];
+  data: {
+    onSend: (prompt: string) => void;
+    chatHistory: ChatMessage[];
+  };
 }
 
-const Chat: React.FC<ChatProps> = ({ onSend, chatHistory }) => {
+const Chat: React.FC<{ data: ChatProps["data"] }> = ({ data }) => {
   const [prompt, setPrompt] = useState("");
 
   const handleSend = () => {
     if (prompt.trim()) {
-      onSend(prompt);
+      data.onSend(prompt);
       setPrompt("");
     }
   };
 
   return (
-    <div className="border border-green-500 p-4 w-96 rounded">
-      <h3 className="font-bold mb-3">Чат</h3>
+    <div className="border border-green-500 p-4 w-96 rounded bg-white shadow-lg">
+      <Handle
+        type="target"
+        position={Position.Left}
+        className="w-3 h-3 bg-green-500"
+      />
+
+      <h3 className="font-bold mb-3 text-center">Chat</h3>
 
       <div className="border border-gray-300 mb-3 p-2 h-52 overflow-y-auto rounded">
-        {chatHistory.map((msg, idx) => (
+        {data.chatHistory.map((msg, idx) => (
           <div key={idx} className="mb-2">
             <p>
               <strong>Question:</strong> {msg.question}
@@ -49,9 +59,15 @@ const Chat: React.FC<ChatProps> = ({ onSend, chatHistory }) => {
           onClick={handleSend}
           className="bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600 transition"
         >
-          Sensd
+          Send
         </button>
       </div>
+
+      <Handle
+        type="source"
+        position={Position.Right}
+        className="w-3 h-3 bg-green-500"
+      />
     </div>
   );
 };
