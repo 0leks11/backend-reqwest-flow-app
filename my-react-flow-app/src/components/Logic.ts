@@ -1,5 +1,6 @@
 import mockOrganizations from "./mockOrganizations.json";
 import mockChatResponse from "./mockChatResponse.json";
+import mockAllOrgsChatResponse from "./mockAllOrgsChatResponse.json";
 
 export interface Organization {
   id: string;
@@ -40,9 +41,9 @@ export interface ChatResponse {
   attachments: unknown[];
 }
 
-//Organisation reqwest:
+//Organisation request:
 export async function getOrganizations(): Promise<OrganizationsResponse> {
-  //real POST-reqwest
+  // real GET request (example)
   fetch(
     "https://api.example.com/v1/organizations/3fa85f64-5717-4562-b3fc-2c963f66afa6/children",
     {
@@ -63,7 +64,7 @@ export async function getOrganizations(): Promise<OrganizationsResponse> {
       console.error("REAL Child-Org REQUEST ERROR (getOrganizations):", error);
     });
 
-  //moced Data income
+  // Mocked data income
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve(mockOrganizations as OrganizationsResponse);
@@ -71,20 +72,18 @@ export async function getOrganizations(): Promise<OrganizationsResponse> {
   });
 }
 
-//real POST-reqwest + (mockChatResponse).
+// real POST-request + (mockChatResponse).
 export async function getChatAnswer(
   selectedOrgIds: string[],
   prompt: string
 ): Promise<ChatResponse> {
-  //real POST-reqwest
+  // real POST request (example)
   fetch("https://api.example.com/v1/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       documentIds: selectedOrgIds,
-      prompt: {
-        question: prompt,
-      },
+      prompt: { question: prompt },
     }),
   })
     .then((res) => {
@@ -103,16 +102,26 @@ export async function getChatAnswer(
       );
     });
 
-  // moced Data income
+  // Mocked data income
   return new Promise((resolve) => {
     setTimeout(() => {
-      resolve({
-        ...mockChatResponse,
-        question: prompt,
-        answer: `Information about Organizations [${selectedOrgIds.join(
-          ", "
-        )}]: ${mockChatResponse.answer}`,
-      } as ChatResponse);
+      // If user didn't explicitly select any org => interpret as "all orgs"
+      if (selectedOrgIds.length === 0) {
+        // We return a different mock for "all orgs"
+        resolve({
+          ...mockAllOrgsChatResponse,
+          question: prompt,
+        } as ChatResponse);
+      } else {
+        // We return the default mock for "some orgs"
+        resolve({
+          ...mockChatResponse,
+          question: prompt,
+          answer: `Information about Organizations [${selectedOrgIds.join(
+            ", "
+          )}]: ${mockChatResponse.answer}`,
+        } as ChatResponse);
+      }
     }, 500);
   });
 }

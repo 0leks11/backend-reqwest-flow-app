@@ -1,0 +1,27 @@
+{
+  "id": "1111-aaaa-2222-bbbb",
+  "question": "Какие организации исследуют заболевания сердца?",
+  "answer": "Ниже список 4 релевантных организаций из всех...",
+  "createdAt": "2025-03-01T10:00:00.000Z",
+  "collections": [],
+  "documents": [
+    {
+      "id": "0021",
+      "name": "Organization 115"
+    },
+    {
+      "id": "00511",
+      "name": "Organization 11015"
+    },
+    {
+      "id": "00204",
+      "name": "Organization 110112"
+    },
+    {
+      "id": "00503",
+      "name": "Organization 011113"
+    }
+  ],
+  "embeddings": [],
+  "attachments": []
+}
